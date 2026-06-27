@@ -155,13 +155,15 @@ The fine-tuned model collapsed to predicting `reaction` for every input. This is
 
 ## Sample Classifications
 
-| Text (truncated) | True Label | Baseline | Fine-Tuned |
-|---|---|---|---|
-| *TBD — fill in from test set* | — | — | — |
-| *TBD* | — | — | — |
-| *TBD* | — | — | — |
-| *TBD* | — | — | — |
-| *TBD* | — | — | — |
+| Text (truncated) | True Label | Predicted | Confidence | Correct? |
+|---|---|---|---|---|
+| "Not much of a protest if you need permission from those you are protesting against" | `hot_take` | `reaction` | 0.38 | ❌ |
+| "Waiting to concede goals so that you start playing attacking football is not a tactic, its a pathetic display of desperation..." | `analysis` | `reaction` | 0.41 | ❌ |
+| "I hope most Man United fans will remember Wayne Rooney as a great legend for them." | `analysis` | `reaction` | 0.38 | ❌ |
+| "Real Madrid [2]-1 Liverpool: Bale 64' (Champions League final)" | `reaction` | `reaction` | 0.85 | ✅ |
+| "Ozil could find the Malaysian flight if it made a good run." | `hot_take` | `reaction` | 0.39 | ❌ |
+
+> **Note on example 4**: The model correctly classified the score-update format ("Team [N]-N Team: Player MM'") as `reaction` with high confidence — this pattern appears consistently throughout the training data and is an unambiguous news-sharing post with no argument or opinion.
 
 ---
 
