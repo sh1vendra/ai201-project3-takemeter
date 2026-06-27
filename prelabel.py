@@ -45,12 +45,18 @@ def save_csv(path: str, rows: list[dict]):
         writer.writerows(rows)
 
 
+def clean_text(text: str) -> str:
+    """Strip non-ASCII characters so the Groq API never sees unicode escapes."""
+    return text.encode("ascii", errors="ignore").decode("ascii")
+
+
 def classify(client: Groq, text: str) -> str:
+    safe_text = clean_text(text)
     response = client.chat.completions.create(
         model=MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": USER_TEMPLATE.format(text=text)},
+            {"role": "user", "content": USER_TEMPLATE.format(text=safe_text)},
         ],
         temperature=0.0,
         max_tokens=10,
@@ -72,8 +78,15 @@ def main():
     all_rows = load_csv(INPUT_FILE)
     print(f"Loaded {len(all_rows)} total rows from {INPUT_FILE}")
 
-    # Find first MAX_ROWS rows with empty label
-    targets = [i for i, r in enumerate(all_rows) if not r["label"].strip()][:MAX_ROWS]
+    # Find first MAX_ROWS rows with empty label OR that previously errored out
+    # Reset errored rows so they get re-queued cleanly
+    for r in all_rows:
+        if r["notes"] == "AI-prelabeled-error":
+            r["label"] = ""
+    targets = [
+        i for i, r in enumerate(all_rows)
+        if not r["label"].strip() or r["label"] == "unknown"
+    ][:MAX_ROWS]
     print(f"Rows to label: {len(targets)}")
     print("=" * 60)
 
@@ -83,6 +96,8 @@ def main():
     for count, idx in enumerate(targets, 1):
         row = all_rows[idx]
         text = row["text"].strip()
+        # Always sanitize to ASCII before API call
+        text = clean_text(text)
 
         try:
             label = classify(client, text)
