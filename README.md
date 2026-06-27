@@ -47,7 +47,7 @@ An immediate emotional response to a specific event. Little to no argument — j
 > "Argentina have won their third World Cup title at the 2022 FIFA World Cup in Qatar!"
 
 **Example 2**
-> "FUCKING HELL NEYMAR JUST SHOOT THE FUCKING BALL AND YOU WOULD HAVE SCORED YOU LITTLE SHIT"
+> "Italy have failed to qualify for the 2018 World Cup."
 
 ---
 
@@ -150,6 +150,8 @@ Post: {text}
 | **True: reaction** | 0 | 0 | 28 |
 
 The fine-tuned model collapsed to predicting `reaction` for every input. This is a textbook class collapse caused by severe label imbalance — `reaction` makes up 80% of the labeled dataset, and the model learned that always predicting the majority class is the loss-minimizing strategy.
+
+![Fine-Tuned Model — Confusion Matrix](confusion_matrix.png)
 
 ---
 

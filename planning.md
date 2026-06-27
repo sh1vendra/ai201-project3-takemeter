@@ -95,30 +95,42 @@ These are the most common sources of labeling error. Each rule resolves ambiguit
 
 ## Data Collection Plan
 
-**Target**: 200 labeled posts (~67 per label)
-**Source**: Top-level comments on r/soccer posts — match threads, discussion threads, and hot posts.
+**Target**: 200 labeled rows (minimum), ~67 per label
+**Source**: r/soccer posts and top-level comments via [Pullpush](https://pullpush.io) (public Pushshift mirror — used in place of PRAW after Reddit blocked unauthenticated API access in 2023)
 
 ### Collection Strategy
 
-| Label | Primary Thread Type | Reasoning |
+| Label | Primary Source | Reasoning |
 |---|---|---|
-| `reaction` | Live match threads, post-match threads | High emotional density, event-specific responses |
-| `hot_take` | Weekly discussion threads, "unpopular opinion" threads | Encourage confident, evidence-free asserting |
-| `analysis` | Tactical discussion posts, historical comparison threads | Draw users inclined toward structured reasoning |
+| `reaction` | High-score post titles, match update threads | High emotional density, event-specific responses |
+| `hot_take` | Discussion threads, opinion posts | Encourage confident, evidence-free asserting |
+| `analysis` | Manually identified from unlabeled pool | Tactical/historical content is rare in top posts |
 
-### Collection Steps
-1. Use the Reddit API (PRAW) or manual scraping to pull top-level comments from 15–20 targeted threads across the three thread types above.
-2. Filter out: deleted/removed comments, comments under 15 words, non-English comments, and pure meme responses.
-3. Annotate each comment with a label. Use a second pass for any flagged ambiguous cases.
-4. Balance across labels: target 67 per class, with a tolerance of ±5.
-5. Store raw data in `data/raw/` as `.jsonl` with fields: `id`, `text`, `label`, `source_thread`, `annotator_notes`.
+### Actual Collection Steps
+1. `scrape_reddit.py` pulled 500 post titles/selftexts and 500 comments from r/soccer sorted by score via Pullpush JSON API.
+2. Cleaned: removed rows starting with `Prediction:`, under 50 characters, `[deleted]`/`[removed]` content, Reddit poll links, and near-duplicates (first 50 chars).
+3. Final pool: **333 rows**.
+4. AI pre-labeling via `prelabel.py` (Groq `llama-3.3-70b-versatile`) labeled 220 rows; all labels manually reviewed.
+5. `analysis` examples were manually identified from unlabeled pool to reach minimum of 15.
+6. Stored as `raw_data.csv` with fields: `text`, `label`, `notes`.
+
+### Actual Label Distribution (Final)
+
+| Label | Count | % of Labeled |
+|---|---|---|
+| `analysis` | 15 | 6% |
+| `hot_take` | 31 | 13% |
+| `reaction` | 186 | 80% |
+| **Total labeled** | **232** | — |
+
+> **Note**: The dataset is heavily skewed toward `reaction` — this reflects the natural distribution of r/soccer content, which is dominated by news sharing and match updates rather than tactical debate. The target of ~67 per class was not achievable without significant manual curation.
 
 ### Train/Validation/Test Split
-- **Train**: 140 posts (70%)
-- **Validation**: 30 posts (15%)
-- **Test**: 30 posts (15%)
+- **Train**: 162 rows (70%)
+- **Validation**: 35 rows (15%)
+- **Test**: 35 rows (15%)
 
-Stratified by label to preserve class balance across all splits.
+Stratified by label to preserve class distribution across all splits.
 
 ---
 
@@ -155,13 +167,19 @@ A model passing this bar on all three classes will be considered ready for use. 
 
 ## AI Tool Plan
 
-AI assistance is used at three stages of the project — not for bulk labeling, but for targeted augmentation and diagnostics.
+AI assistance was planned for three stages. Below is what was planned vs. what was actually executed.
 
-### 1. Label Stress-Testing (Pre-Collection)
-Before collecting data, use an LLM to generate synthetic edge cases for each class boundary (e.g., `hot_take`/`analysis` border, `reaction`/`hot_take` border). These synthetic posts are used to pressure-test the decision rules in the taxonomy above — not added to training data. The goal is to expose decision rule gaps before annotation begins.
+### 1. Label Stress-Testing (Pre-Collection) — *Planned*
+Before collecting data, use an LLM to generate synthetic edge cases for each class boundary. These would be used to pressure-test the decision rules — not added to training data.
 
-### 2. Annotation Assistance (During Collection)
-For comments flagged as ambiguous during human annotation, use an LLM to provide a suggested label with reasoning. The human annotator makes the final call, but the LLM suggestion surfaces alternative interpretations and reduces annotation fatigue on hard cases. All AI-assisted labels are marked in `annotator_notes` as `ai_suggested` for traceability.
+**Outcome**: The edge case decision rules (Cases 1–4 above) were developed through manual inspection of the data rather than LLM-generated synthetic examples. This stage was effectively merged into manual annotation.
 
-### 3. Failure Analysis (Post-Training)
-After evaluating the fine-tuned model on the test set, feed misclassified examples to an LLM with the prompt: *"Given this label taxonomy, why might a model confuse this post's class?"* The output is used to identify systematic failure patterns (e.g., sarcasm consistently mislabeled, stats used as assertions consistently promoted to `analysis`) and inform a second round of decision rule refinement or targeted data augmentation.
+### 2. Annotation Assistance (During Collection) — *Executed*
+For unlabeled rows, `prelabel.py` called the Groq API (`llama-3.3-70b-versatile`) to suggest a label for each row. The human annotator made the final call on all labels. AI-suggested labels are marked `AI-prelabeled` in the `notes` column; manually corrected rows are marked `manual-labeled`.
+
+**Outcome**: 220 rows were AI-prelabeled. All were reviewed. 15 `analysis` rows and several corrections were manually assigned. The tool worked as intended for `reaction` classification but under-performed on `analysis` even during prelabeling.
+
+### 3. Failure Analysis (Post-Training) — *Executed*
+Misclassified examples from the test set were reviewed against the label taxonomy to identify systematic patterns.
+
+**Outcome**: The dominant failure mode was class collapse — the fine-tuned model predicted `reaction` for all inputs due to severe class imbalance. This was apparent from the confusion matrix and confirmed the need for weighted loss or balanced resampling in any follow-up training run.
