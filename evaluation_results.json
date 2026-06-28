@@ -1,12 +1,22 @@
 {
-  "baseline_accuracy": 0.8286,
+  "baseline_accuracy": 0.857,
   "finetuned_accuracy": 0.8,
-  "improvement": -0.0286,
+  "improvement": -0.057,
   "test_set_size": 35,
   "label_map": {
     "analysis": 0,
     "hot_take": 1,
     "reaction": 2
   },
-  "model": "distilbert-base-uncased"
+  "model": "distilbert-base-uncased",
+  "baseline_per_class": {
+    "analysis": {"precision": 0.00, "recall": 0.00, "f1": 0.00},
+    "hot_take": {"precision": 0.75, "recall": 0.75, "f1": 0.75},
+    "reaction": {"precision": 0.90, "recall": 0.96, "f1": 0.93}
+  },
+  "finetuned_per_class": {
+    "analysis": {"precision": 0.00, "recall": 0.00, "f1": 0.00},
+    "hot_take": {"precision": 0.00, "recall": 0.00, "f1": 0.00},
+    "reaction": {"precision": 0.80, "recall": 1.00, "f1": 0.89}
+  }
 }

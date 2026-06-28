@@ -121,17 +121,17 @@ Post: {text}
 
 | Model | Accuracy |
 |---|---|
-| Baseline (Groq llama-3.3-70b-versatile) | **0.829** |
+| Baseline (Groq llama-3.3-70b-versatile) | **0.857** |
 | Fine-tuned DistilBERT | **0.800** |
-| Difference | -0.029 |
+| Difference | -0.057 |
 
 ### Baseline Per-Class Metrics
 
 | Label | Precision | Recall | F1 |
 |---|---|---|---|
 | `analysis` | 0.00 | 0.00 | 0.00 |
-| `hot_take` | 0.60 | 0.75 | 0.67 |
-| `reaction` | 0.90 | 0.93 | 0.91 |
+| `hot_take` | 0.75 | 0.75 | 0.75 |
+| `reaction` | 0.90 | 0.96 | 0.93 |
 
 ### Fine-Tuned DistilBERT Per-Class Metrics
 
@@ -207,7 +207,7 @@ The baseline (Groq LLM) performed better on minority classes because it uses in-
 
 ## Spec Reflection
 
-The project plan specified F1 ≥ 0.70 per class as the definition of success. Neither model met this bar for `analysis`. The baseline met it for `reaction` (F1=0.91) and approached it for `hot_take` (F1=0.67). The fine-tuned model met it only for `reaction` (F1=0.89) and failed entirely on the other two classes.
+The project plan specified F1 ≥ 0.70 per class as the definition of success. Neither model met this bar for `analysis`. The baseline met it for `reaction` (F1=0.93) and exactly met it for `hot_take` (F1=0.75). The fine-tuned model met it only for `reaction` (F1=0.89) and failed entirely on the other two classes.
 
 The primary bottleneck was data quantity and balance — 15 `analysis` examples and 31 `hot_take` examples are not enough for a supervised fine-tuning approach on a small model. A realistic fix would require:
 - 60–80 examples per class (balanced)
